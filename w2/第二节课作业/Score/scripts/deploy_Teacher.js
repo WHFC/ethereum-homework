@@ -8,7 +8,12 @@ async function main() {
   
     await teacher.deployed();
     await teacher.initialize();
-    console.log("Counter deployed to:", teacher.address);
+    console.log("Teacher deployed to:", teacher.address);
+    
+    const TeacherFactory = await hre.ethers.getContractFactory("TeacherFactory");
+    const teacherFactory = await TeacherFactory.deploy();
+    await teacherFactory.deployed();
+    console.log("TeacherFactory deployed to:", teacherFactory.address);
   }
   
   // We recommend this pattern to be able to use async/await everywhere

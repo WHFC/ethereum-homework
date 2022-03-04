@@ -2,7 +2,7 @@ const { assert } = require('chai');
 const { abi } = require('../artifacts/contracts/Teacher.sol/Teacher.json');
 async function main() {
     const accounts = await hre.ethers.getSigners();
-    let contractAddress = "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650";
+    let contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
     // 设置为非部署账号
     const teacher = await new hre.ethers.Contract(contractAddress, abi, accounts[1]);
 

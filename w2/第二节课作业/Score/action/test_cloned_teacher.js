@@ -1,12 +1,17 @@
+
 const { assert } = require('chai');
-const { ethers, Contract } = require('hardhat');
+const { ethers} = require('hardhat');
+const { Contract } = require('ethers');
+const { abi } = require('../artifacts/contracts/Teacher.sol/Teacher.json');
 
 async function main() {
   // 获取已发布的Teacher合约
-  const accounts = await hre.ethers.getSigners();
-  const address = "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650";
-  const Teacher = await ethers.getContractFactory("Teacher");
-  const teacher = await Teacher.attach(address);
+  const accounts = await ethers.getSigners();
+  const contractAddress = "0x35c4aee0a5a93171750393b5e289f0f71005be81";
+  // 设置为部署账号
+  const teacher = await new Contract(contractAddress, abi, accounts[1]);
+  // 第一次需要初始化为调用克隆的地址
+//   await teacher.initialize();
 
   // 获取现在已经有的考试数量
   let countOld = await teacher.getExamCount();

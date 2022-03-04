@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+library Clone {
+    function cloneDeterministic(address master, bytes32 salt) internal returns (address instance) {
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+            mstore(add(ptr, 0x14), shl(0x60, master))
+            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+            instance := create2(0, ptr, 0x37, salt)
+        }
+        require(instance != address(0), "ERC1167: create2 failed");
+    }
+}
+
 interface IScore {
     function teacher() external view returns (address);
     function scores(address student) external view returns (uint8);
@@ -33,6 +46,7 @@ contract Score {
 }
 
 contract Teacher {
+    using Clone for address;
     address private owner;
     mapping(uint256 => address) private examResult;
     uint256 private examCount;
@@ -86,22 +100,23 @@ contract Teacher {
             score = newScoreContract();
             return score;
         }
-        return cloneDeterministic(score, keccak256(abi.encodePacked(examCount++)));
+        return score.cloneDeterministic(keccak256(abi.encodePacked(examCount++)));
     }
 
     function newScoreContract() internal returns (address) {
         ++examCount;
         return address(new Score());
     }
+}
 
-    function cloneDeterministic(address master, bytes32 salt) internal returns (address instance) {
-        assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
-            mstore(add(ptr, 0x14), shl(0x60, master))
-            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
-            instance := create2(0, ptr, 0x37, salt)
-        }
-        require(instance != address(0), "ERC1167: create2 failed");
+contract TeacherFactory {
+    using Clone for address;
+    event TeacherCloned(address teacher);
+
+    function cloneTeacher(address master, bytes32 salt) external returns (address) {
+        require(address(0) != master);
+        address result = master.cloneDeterministic(salt);
+        emit TeacherCloned(result);
+        return result;
     }
 }
