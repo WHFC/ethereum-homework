@@ -4,22 +4,22 @@ const { ethers, Contract } = require('hardhat');
 async function main() {
   // 获取已发布的Teacher合约
   const accounts = await hre.ethers.getSigners();
-  const address = "0x4826533B4897376654Bb4d4AD88B7faFD0C98528";
+  const address = "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650";
   const Teacher = await ethers.getContractFactory("Teacher");
   const teacher = await Teacher.attach(address);
 
-  // 获取现在已经有的课程数量
+  // 获取现在已经有的考试数量
   let countOld = await teacher.getExamCount();
   console.log("exam old count: ", countOld);
 
-  // 新建一个课程并确认创建是否成功
+  // 新建一个考试并确认创建是否成功
   let newExamTx = await teacher.newExam();
   await newExamTx.wait();
   let currentCount = await teacher.getExamCount();
   assert(currentCount - countOld == 1);
   console.log("exam current count: ", currentCount);
 
-  // 通过现有课程数量-1得到新创建的课程index，检查是否有该课程（在创建的时候会返回课程index，且触发对应事件）
+  // 通过现有考试数量-1得到新创建的考试index，检查是否有该考试（在创建的时候会返回考试index，且触发对应事件）
   let index = currentCount - 1;
   let haveExam = await teacher.haveExam(index);
   console.log("have index: ", index, " of exam: ", haveExam);

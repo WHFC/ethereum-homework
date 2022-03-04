@@ -19,9 +19,6 @@ contract Score {
         _;
     }
 
-    constructor() {
-    }
-
     function initialize() external {
         require(teacher == address(0), "already initialized");
         teacher = msg.sender;
@@ -30,6 +27,7 @@ contract Score {
     function updateScore(address student, uint8 score) external onlyTeacher returns (bool) {
         require(score <= 100, "score limit 0 to 100");
         scores[student] = score;
+        emit ScoreChanged(student, score);
         return true;
     }
 }
@@ -45,9 +43,6 @@ contract Teacher {
     modifier onlyOwner() {
         require(msg.sender == owner, "only owner can call this function!");
         _;
-    }
-
-    constructor() {
     }
 
     function initialize() external {
