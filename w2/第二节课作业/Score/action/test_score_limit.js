@@ -3,7 +3,8 @@ const { abi } = require('../artifacts/contracts/Teacher.sol/Teacher.json');
 async function main() {
     const accounts = await hre.ethers.getSigners();
     let contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-    const teacher = await new hre.ethers.Contract(contractAddress, abi, accounts[0]);
+    // 设置为teacher的owner账号（并不一定是TeacherFactory的owner）
+    const teacher = await new hre.ethers.Contract(contractAddress, abi, accounts[1]);
 
     let currentCount = await teacher.getExamCount();
     console.log("exam current count: ", currentCount);

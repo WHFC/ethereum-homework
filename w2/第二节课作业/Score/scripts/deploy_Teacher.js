@@ -3,13 +3,16 @@
 async function main() {
     // await hre.run('compile');
     
-    const Teacher = await hre.ethers.getContractFactory("Teacher");
-    const teacher = await Teacher.deploy();
+    // 单独部署Teacher
+    // const accounts = await hre.ethers.getSigners();
+    // const Teacher = await hre.ethers.getContractFactory("Teacher");
+    // const teacher = await Teacher.deploy();
   
-    await teacher.deployed();
-    await teacher.initialize();
-    console.log("Teacher deployed to:", teacher.address);
+    // await teacher.deployed();
+    // await teacher.initialize(accounts[0].address);
+    // console.log("Teacher deployed to:", teacher.address);
     
+    // 部署TeacherFactory，通过newTeacher接口部署teacher
     const TeacherFactory = await hre.ethers.getContractFactory("TeacherFactory");
     const teacherFactory = await TeacherFactory.deploy();
     await teacherFactory.deployed();

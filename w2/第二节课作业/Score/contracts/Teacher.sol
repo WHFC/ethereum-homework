@@ -48,9 +48,9 @@ contract Score {
 contract Teacher {
     using Clone for address;
     address private owner;
-    mapping(uint256 => address) private examResult;
+    mapping(uint256 => address) private exams;
     uint256 private examCount;
-    address private score;
+    address private orginScore;
 
     event ExamCreated(uint256 indexed index);
 
@@ -59,36 +59,36 @@ contract Teacher {
         _;
     }
 
-    function initialize() external {
+    function initialize(address _owner) external {
         require(owner == address(0), "already initialized");
-        owner = msg.sender;
+        owner = _owner;
     }
 
     function newExam() external onlyOwner returns (uint256 index) {
         index = examCount;
-        examResult[index] = newScore();
-        IScore(examResult[index]).initialize();
+        exams[index] = newScore();
+        IScore(exams[index]).initialize();
         emit ExamCreated(index);
         return index;
     }
 
     function setScore(uint256 examIndex, address student, uint8 _score) external onlyOwner returns (bool) {
-        require(examResult[examIndex] != address(0), "exam non-existent");
-        return IScore(examResult[examIndex]).updateScore(student, _score);
+        require(exams[examIndex] != address(0), "exam non-existent");
+        return IScore(exams[examIndex]).updateScore(student, _score);
     }
 
     function getScore(uint256 examIndex, address student) external view returns (uint8) {
-        require(examResult[examIndex] != address(0), "exam non-existent");
-        return IScore(examResult[examIndex]).scores(student);
+        require(exams[examIndex] != address(0), "exam non-existent");
+        return IScore(exams[examIndex]).scores(student);
     }
 
     function haveExam(uint256 examIndex) external view returns (bool) {
-        return examResult[examIndex] != address(0);
+        return exams[examIndex] != address(0);
     }
 
     function getTeacher(uint256 examIndex) external view returns (address) {
-        require(examResult[examIndex] != address(0), "exam non-existent");
-        return IScore(examResult[examIndex]).teacher();
+        require(exams[examIndex] != address(0), "exam non-existent");
+        return IScore(exams[examIndex]).teacher();
     }
 
     function getExamCount() external view returns (uint256) {
@@ -96,11 +96,11 @@ contract Teacher {
     }
 
     function newScore() internal returns (address) {
-        if (address(0) == score) {
-            score = newScoreContract();
-            return score;
+        if (address(0) == orginScore) {
+            orginScore = newScoreContract();
+            return orginScore;
         }
-        return score.cloneDeterministic(keccak256(abi.encodePacked(examCount++)));
+        return orginScore.cloneDeterministic(keccak256(abi.encodePacked(examCount++)));
     }
 
     function newScoreContract() internal returns (address) {
@@ -109,14 +109,36 @@ contract Teacher {
     }
 }
 
+interface ITeacher {
+    function initialize(address _owner) external;
+}
+
 contract TeacherFactory {
     using Clone for address;
-    event TeacherCloned(address teacher);
 
-    function cloneTeacher(address master, bytes32 salt) external returns (address) {
-        require(address(0) != master);
-        address result = master.cloneDeterministic(salt);
-        emit TeacherCloned(result);
-        return result;
+    address public owner;
+    uint256 public clonedCount;
+    address public orignTeacher;
+
+    event TeacherCreated(address teacher);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "only owner can call this function!");
+        _;
+    }
+    
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function newTeacher(address _owder) external onlyOwner returns (address result){
+        if (address(0) == orignTeacher) {
+            orignTeacher = address(new Teacher());
+            result = orignTeacher;
+        } else {
+            result = orignTeacher.cloneDeterministic(keccak256(abi.encode(clonedCount++)));
+        }
+        emit TeacherCreated(result);
+        ITeacher(result).initialize(_owder);
     }
 }

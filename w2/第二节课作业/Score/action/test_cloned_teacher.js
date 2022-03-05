@@ -7,11 +7,11 @@ const { abi } = require('../artifacts/contracts/Teacher.sol/Teacher.json');
 async function main() {
   // 获取已发布的Teacher合约
   const accounts = await ethers.getSigners();
-  const contractAddress = "0x35c4aee0a5a93171750393b5e289f0f71005be81";
-  // 设置为部署账号
+  const contractAddress = "0x14a046ef5b5d2c45e921e97c4568481fa6e99ed1";
+  // 设置为owner账号
   const teacher = await new Contract(contractAddress, abi, accounts[1]);
-  // 第一次需要初始化为调用克隆的地址
-//   await teacher.initialize();
+  // 自己单独部署的Teacher，第一次需要初始化owner; 如果使用TeacherFactory创建的teacher则不需要,在newTeacher接口已做初始化操作
+//   await teacher.initialize(accounts[1].address);
 
   // 获取现在已经有的考试数量
   let countOld = await teacher.getExamCount();
