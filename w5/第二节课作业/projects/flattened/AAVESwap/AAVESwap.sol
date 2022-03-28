@@ -1,6 +1,8 @@
 // Sources flattened with hardhat v2.9.0 https://hardhat.org
 
 // File contracts/aave-v3-core/contracts/interfaces/IPoolAddressesProvider.sol
+
+// SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.10;
 
 /**
@@ -230,6 +232,7 @@ interface IPoolAddressesProvider {
 
 
 // File contracts/aave-v3-core/contracts/protocol/libraries/types/DataTypes.sol
+
 pragma solidity 0.8.10;
 
 library DataTypes {
@@ -500,6 +503,7 @@ library DataTypes {
 
 
 // File contracts/aave-v3-core/contracts/interfaces/IPool.sol
+
 pragma solidity 0.8.10;
 /**
  * @title IPool
@@ -1245,6 +1249,7 @@ interface IPool {
 
 
 // File contracts/aave-v3-core/contracts/flashloan/interfaces/IFlashLoanSimpleReceiver.sol
+
 pragma solidity 0.8.10;
 /**
  * @title IFlashLoanSimpleReceiver
@@ -1279,6 +1284,7 @@ interface IFlashLoanSimpleReceiver {
 
 
 // File contracts/aave-v3-core/contracts/flashloan/base/FlashLoanSimpleReceiverBase.sol
+
 pragma solidity 0.8.10;
 /**
  * @title FlashLoanSimpleReceiverBase
@@ -1293,6 +1299,71 @@ abstract contract FlashLoanSimpleReceiverBase is IFlashLoanSimpleReceiver {
     ADDRESSES_PROVIDER = provider;
     POOL = IPool(provider.getPool());
   }
+}
+
+
+// File contracts/uniswap-v2-core-master/contracts/interfaces/IUniswapV2Callee.sol
+
+pragma solidity >=0.5.0;
+
+interface IUniswapV2Callee {
+    function uniswapV2Call(address sender, uint amount0, uint amount1, bytes calldata data) external;
+}
+
+
+// File contracts/uniswap-v2-core-master/contracts/interfaces/IUniswapV2Pair.sol
+
+pragma solidity >=0.5.0;
+
+interface IUniswapV2Pair {
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    function name() external pure returns (string memory);
+    function symbol() external pure returns (string memory);
+    function decimals() external pure returns (uint8);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint value) external returns (bool);
+    function transfer(address to, uint value) external returns (bool);
+    function transferFrom(address from, address to, uint value) external returns (bool);
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function PERMIT_TYPEHASH() external pure returns (bytes32);
+    function nonces(address owner) external view returns (uint);
+
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+
+    event Mint(address indexed sender, uint amount0, uint amount1);
+    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
+
+    function MINIMUM_LIQUIDITY() external pure returns (uint);
+    function factory() external view returns (address);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function price0CumulativeLast() external view returns (uint);
+    function price1CumulativeLast() external view returns (uint);
+    function kLast() external view returns (uint);
+
+    function mint(address to) external returns (uint liquidity);
+    function burn(address to) external returns (uint amount0, uint amount1);
+    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;
+    function skim(address to) external;
+    function sync() external;
+
+    function initialize(address, address) external;
 }
 
 
@@ -1395,7 +1466,111 @@ interface IUniswapV2Router01 {
 }
 
 
-// File contracts/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol
+// File contracts/uniswap-v2-periphery-master/contracts/libraries/SafeMath.sol
+
+pragma solidity >=0.6.6;
+
+// a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
+
+library SafeMath {
+    function add(uint x, uint y) internal pure returns (uint z) {
+        require((z = x + y) >= x, 'ds-math-add-overflow');
+    }
+
+    function sub(uint x, uint y) internal pure returns (uint z) {
+        require((z = x - y) <= x, 'ds-math-sub-underflow');
+    }
+
+    function mul(uint x, uint y) internal pure returns (uint z) {
+        require(y == 0 || (z = x * y) / y == x, 'ds-math-mul-overflow');
+    }
+}
+
+
+// File contracts/uniswap-v2-periphery-master/contracts/libraries/UniswapV2Library.sol
+
+pragma solidity >=0.5.0;
+library UniswapV2Library {
+    using SafeMath for uint;
+
+    // returns sorted token addresses, used to handle return values from pairs sorted in this order
+    function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
+        require(tokenA != tokenB, 'UniswapV2Library: IDENTICAL_ADDRESSES');
+        (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        require(token0 != address(0), 'UniswapV2Library: ZERO_ADDRESS');
+    }
+
+    // calculates the CREATE2 address for a pair without making any external calls
+    function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
+        (address token0, address token1) = sortTokens(tokenA, tokenB);
+        pair = address(uint160(uint(keccak256(abi.encodePacked(
+                hex'ff',
+                factory,
+                keccak256(abi.encodePacked(token0, token1)),
+                hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f' // init code hash
+                // hex'9711eca875d6b1d47c2c5d0f07804216fa3a6dda42bf49023199724108b24837' // init code hash
+            )))));
+    }
+
+    // fetches and sorts the reserves for a pair
+    function getReserves(address factory, address tokenA, address tokenB) internal view returns (uint reserveA, uint reserveB) {
+        (address token0,) = sortTokens(tokenA, tokenB);
+        (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB)).getReserves();
+        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+    }
+
+    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+    function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
+        require(amountA > 0, 'UniswapV2Library: INSUFFICIENT_AMOUNT');
+        require(reserveA > 0 && reserveB > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        amountB = amountA.mul(reserveB) / reserveA;
+    }
+
+    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
+        require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        uint amountInWithFee = amountIn.mul(997);
+        uint numerator = amountInWithFee.mul(reserveOut);
+        uint denominator = reserveIn.mul(1000).add(amountInWithFee);
+        amountOut = numerator / denominator;
+    }
+
+    // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
+        require(amountOut > 0, 'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        uint numerator = reserveIn.mul(amountOut).mul(1000);
+        uint denominator = reserveOut.sub(amountOut).mul(997);
+        amountIn = (numerator / denominator).add(1);
+    }
+
+    // performs chained getAmountOut calculations on any number of pairs
+    function getAmountsOut(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts) {
+        require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
+        amounts = new uint[](path.length);
+        amounts[0] = amountIn;
+        for (uint i; i < path.length - 1; i++) {
+            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+        }
+    }
+
+    // performs chained getAmountIn calculations on any number of pairs
+    function getAmountsIn(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
+        require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
+        amounts = new uint[](path.length);
+        amounts[amounts.length - 1] = amountOut;
+        for (uint i = path.length - 1; i > 0; i--) {
+            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
+            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+        }
+    }
+}
+
+
+// File contracts/AAVESwap/UniswapV3FromKovan/IUniswapV3SwapCallback.sol
+
 pragma solidity >=0.5.0;
 
 /// @title Callback for IUniswapV3PoolActions#swap
@@ -1418,24 +1593,26 @@ interface IUniswapV3SwapCallback {
 }
 
 
-// File contracts/v3-periphery/contracts/interfaces/ISwapRouter.sol
+// File contracts/AAVESwap/UniswapV3FromKovan/IV3SwapRouter.sol
+
 pragma solidity >=0.7.5;
 pragma abicoder v2;
 /// @title Router token swapping functionality
 /// @notice Functions for swapping tokens via Uniswap V3
-interface ISwapRouter is IUniswapV3SwapCallback {
+interface IV3SwapRouter is IUniswapV3SwapCallback {
     struct ExactInputSingleParams {
         address tokenIn;
         address tokenOut;
         uint24 fee;
         address recipient;
-        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
         uint160 sqrtPriceLimitX96;
     }
 
     /// @notice Swaps `amountIn` of one token for as much as possible of another token
+    /// @dev Setting `amountIn` to 0 will cause the contract to look up its own balance,
+    /// and swap the entire amount, enabling contracts to send tokens before calling this function.
     /// @param params The parameters necessary for the swap, encoded as `ExactInputSingleParams` in calldata
     /// @return amountOut The amount of the received token
     function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
@@ -1443,12 +1620,13 @@ interface ISwapRouter is IUniswapV3SwapCallback {
     struct ExactInputParams {
         bytes path;
         address recipient;
-        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
     }
 
     /// @notice Swaps `amountIn` of one token for as much as possible of another along the specified path
+    /// @dev Setting `amountIn` to 0 will cause the contract to look up its own balance,
+    /// and swap the entire amount, enabling contracts to send tokens before calling this function.
     /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactInputParams` in calldata
     /// @return amountOut The amount of the received token
     function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
@@ -1458,13 +1636,13 @@ interface ISwapRouter is IUniswapV3SwapCallback {
         address tokenOut;
         uint24 fee;
         address recipient;
-        uint256 deadline;
         uint256 amountOut;
         uint256 amountInMaximum;
         uint160 sqrtPriceLimitX96;
     }
 
     /// @notice Swaps as little as possible of one token for `amountOut` of another token
+    /// that may remain in the router after the swap.
     /// @param params The parameters necessary for the swap, encoded as `ExactOutputSingleParams` in calldata
     /// @return amountIn The amount of the input token
     function exactOutputSingle(ExactOutputSingleParams calldata params) external payable returns (uint256 amountIn);
@@ -1472,12 +1650,12 @@ interface ISwapRouter is IUniswapV3SwapCallback {
     struct ExactOutputParams {
         bytes path;
         address recipient;
-        uint256 deadline;
         uint256 amountOut;
         uint256 amountInMaximum;
     }
 
     /// @notice Swaps as little as possible of one token for `amountOut` of another along the specified path (reversed)
+    /// that may remain in the router after the swap.
     /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactOutputParams` in calldata
     /// @return amountIn The amount of the input token
     function exactOutput(ExactOutputParams calldata params) external payable returns (uint256 amountIn);
@@ -1506,6 +1684,7 @@ interface IERC20 {
 
 
 // File contracts/v3-periphery/contracts/libraries/TransferHelper.sol
+
 pragma solidity >=0.6.0;
 library TransferHelper {
     /// @notice Transfers tokens from the targeted address to the given destination
@@ -1567,14 +1746,24 @@ library TransferHelper {
 // File contracts/AAVESwap/AAVESwap.sol
 
 pragma solidity 0.8.10;
+// import './AAVEV3FromRinkeby/IPoolAddressesProvider.sol';
+
 contract AAVESwap is FlashLoanSimpleReceiverBase {
-    IUniswapV2Router01 public constant v2router = IUniswapV2Router01(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);   // v2router on kovan
-    ISwapRouter public constant v3router = ISwapRouter(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);          // v3router on kovan
-    address public constant WETH = 0xd0A1E359811322d97991E03f863a0C30C2cF029C;                  // WETH on kovan
-    address public constant token0 = 0x322ACc3d2a82c1D44e30263DD31A3A5A60F1D327;                 // AT on kovan
+    IUniswapV2Router01 public constant v2router = IUniswapV2Router01(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);   // v2router on rinkeby
+    IV3SwapRouter public constant v3router = IV3SwapRouter(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);          // v3router on rinkeby
+    IPoolAddressesProvider public constant poolAddressProvider = IPoolAddressesProvider(0xA55125A90d75a95EC00130E8E8C197dB5641Eb19); // pool address provider on rinkeby
+    address public constant DAI = 0x2Ec4c6fCdBF5F9beECeB1b51848fc2DB1f3a26af;                  // DAI on rinkeby
+    address public constant WHT = 0x322ACc3d2a82c1D44e30263DD31A3A5A60F1D327;                 // WHT on rinkeby
 
-    constructor(IPoolAddressesProvider provider) FlashLoanSimpleReceiverBase(provider) {
+    constructor() FlashLoanSimpleReceiverBase(poolAddressProvider) {
+    }
 
+    function flashloan(uint256 value) external returns (bool) {
+        POOL.flashLoanSimple(address(this), DAI, value, abi.encode(uint256(value)), 0);
+        uint256 balance = IERC20(DAI).balanceOf(address(this));
+        require(balance > 0, "invalid flashloan");
+        TransferHelper.safeTransfer(DAI, msg.sender, balance);
+        return true;
     }
 
     function executeOperation(
@@ -1584,25 +1773,23 @@ contract AAVESwap is FlashLoanSimpleReceiverBase {
     address initiator,
     bytes calldata params
   ) external returns (bool) {
-        // 暂时不确定是转的ETH还是WETH到合约中，暂时以WETH为例
-        require(WETH == asset, "only receive weth");
+        require(DAI == asset, "only receive DAI");
         require(amount > 0, "invalid amount");
-        // 将收到的WETH授权给uniswap v2 router
-        TransferHelper.safeApprove(WETH, address(v2router), amount);
+        // 将收到的DAI授权给uniswap v2 router
+        TransferHelper.safeApprove(DAI, address(v2router), amount);
         address[] memory path = new address[](2);
-        path[0] = WETH;
-        path[1] = token0;
-        // 在v2router中，使用WETH兑换token0
-        uint256 amountOut1 = v2router.swapExactTokensForTokens(amount, 0, path, address(this), block.number)[1];
+        path[0] = DAI;
+        path[1] = WHT;
+        // 在v2router中，使用DAI兑换token0
+        uint256 amountOut1 = v2router.swapExactTokensForTokens(amount, 0, path, address(this), block.number*1000)[1];
         // 将对话的otken0授权给uniswap v3 router
-        TransferHelper.safeApprove(token0, address(v3router), amountOut1);
-        // 在v3router中兑换WETH
-        uint256 amountOut2 = v3router.exactInputSingle(ISwapRouter.ExactInputSingleParams({
-            tokenIn:token0,
-            tokenOut:WETH,
+        TransferHelper.safeApprove(WHT, address(v3router), amountOut1);
+        // 在v3router中兑换DAI
+        uint256 amountOut2 = v3router.exactInputSingle(IV3SwapRouter.ExactInputSingleParams({
+            tokenIn:WHT,
+            tokenOut:DAI,
             fee:3000,
             recipient:address(this),
-            deadline:block.number,
             amountIn:amountOut1,
             amountOutMinimum:0,
             sqrtPriceLimitX96:0
@@ -1612,10 +1799,10 @@ contract AAVESwap is FlashLoanSimpleReceiverBase {
         require(amountOut2 >= debt, "amount lower than debt");
         (uint minTokens) = abi.decode(params, (uint256));
         require(minTokens >= amountOut2 - debt, "not enough rewards");
-        // 将多余的WETH转给交易发起人
-        TransferHelper.safeTransfer(WETH, initiator, amountOut2 - debt);
-        // 将需要偿还债务的WETH授权给POOL
-        TransferHelper.safeApprove(WETH, msg.sender, debt);
+        // 将多余的DAI转给交易发起人
+        TransferHelper.safeTransfer(DAI, initiator, amountOut2 - debt);
+        // 将需要偿还债务的DAI授权给POOL
+        TransferHelper.safeApprove(DAI, msg.sender, debt);
         return true;
   }
 }
