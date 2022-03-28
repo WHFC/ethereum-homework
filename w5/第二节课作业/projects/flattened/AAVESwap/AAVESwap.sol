@@ -1781,7 +1781,7 @@ contract AAVESwap is FlashLoanSimpleReceiverBase {
         path[0] = DAI;
         path[1] = WHT;
         // 在v2router中，使用DAI兑换token0
-        uint256 amountOut1 = v2router.swapExactTokensForTokens(amount, 0, path, address(this), block.number*1000)[1];
+        uint256 amountOut1 = v2router.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp+2000)[1];
         // 将对话的otken0授权给uniswap v3 router
         TransferHelper.safeApprove(WHT, address(v3router), amountOut1);
         // 在v3router中兑换DAI
